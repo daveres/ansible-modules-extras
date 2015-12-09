@@ -112,18 +112,10 @@ Function Nssm-Install
         $result.changed = $true
         
      } else {
-        $cmd = "nssm get ""$name"" Application"
-        $results = invoke-expression $cmd
-
-        if ($LastExitCode -ne 0)
-        {
-            Set-Attr $result "nssm_error_cmd" $cmd
-            Set-Attr $result "nssm_error_log" "$results"
-            Throw "Error installing service ""$name"""
-        }
-
-        if ($results -ne $application)
-        {
+        $baseregistry = "HKLM:\SYSTEM\CurrentControlSet\Services\"
+        $regApplication = (Get-ItemProperty $baseregistry\$name\Parameters).Application
+		
+        if ($regApplication -ne $application) {
             $cmd = "nssm set ""$name"" Application $application"
 
             $results = invoke-expression $cmd
@@ -137,7 +129,7 @@ Function Nssm-Install
 
             $result.changed = $true
         }
-     }
+    }
 }
 
 Function ParseAppParameters()
@@ -165,16 +157,9 @@ Function Nssm-Update-AppParameters
         [AllowEmptyString()]
         [string]$appParameters
     )
-
-    $cmd = "nssm get ""$name"" AppParameters"
-    $results = invoke-expression $cmd
-
-    if ($LastExitCode -ne 0)
-    {
-        Set-Attr $result "nssm_error_cmd" $cmd
-        Set-Attr $result "nssm_error_log" "$results"
-        Throw "Error updating AppParameters for service ""$name"""
-    }
+	
+	$baseregistry = "HKLM:\SYSTEM\CurrentControlSet\Services\"
+	$regAppParameters = (Get-ItemProperty $baseregistry\$name\Parameters).AppParameters
 
     $appParametersHash = ParseAppParameters -appParameters $appParameters
 
@@ -202,7 +187,7 @@ Function Nssm-Update-AppParameters
     Set-Attr $result "nssm_app_parameters_vals" $appParamVals
     Set-Attr $result "nssm_single_line_app_parameters" $singleLineParams
 
-    if ($results -ne $singleLineParams)
+    if ($regAppParameters.trim() -ne $singleLineParams.trim())
     {
         $cmd = "nssm set ""$name"" AppParameters $singleLineParams"
         $results = invoke-expression $cmd
@@ -420,19 +405,12 @@ Function Nssm-Update-StartMode
         [string]$mode
     )
 
-    $cmd = "nssm get ""$name"" Start"
-    $results = invoke-expression $cmd
+	$results = (Get-WmiObject -Class Win32_Service -Property StartMode -Filter "Name='$name'").StartMode
 
-    if ($LastExitCode -ne 0)
-    {
-        Set-Attr $result "nssm_error_cmd" $cmd
-        Set-Attr $result "nssm_error_log" "$results"
-        Throw "Error updating start mode for service ""$name"""
-    }
+    if ($mode.ToLower() -ne $results.ToLower()) {
+		$modes=@{"auto" = "SERVICE_AUTO_START"; "manual" = "SERVICE_DEMAND_START"; "disabled" = "SERVICE_DISABLED"}
+		$mappedMode = $modes.$mode
 
-    $modes=@{"auto" = "SERVICE_AUTO_START"; "manual" = "SERVICE_DEMAND_START"; "disabled" = "SERVICE_DISABLED"}
-    $mappedMode = $modes.$mode
-    if ($mappedMode -ne $results) {
         $cmd = "nssm set ""$name"" Start $mappedMode"
         $results = invoke-expression $cmd
 
