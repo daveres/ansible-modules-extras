@@ -75,13 +75,13 @@ author: "Adam Keech (@smadam813), Josh Ludwig (@joshludwig)"
 EXAMPLES = '''
   # Creates Registry Key called MyCompany.
   win_regedit:
-    key: HKCU:\Software\MyCompany
+    key: HKCU\Software\MyCompany
     
   # Creates Registry Key called MyCompany,
   # a value within MyCompany Key called "hello", and
   # data for the value "hello" containing "world".
   win_regedit:
-    key: HKCU:\Software\MyCompany
+    key: HKCU\Software\MyCompany
     value: hello
     data: world
 
@@ -89,7 +89,7 @@ EXAMPLES = '''
   # a value within MyCompany Key called "hello", and
   # data for the value "hello" containing "1337" as type "dword".
   win_regedit:
-    key: HKCU:\Software\MyCompany
+    key: HKCU\Software\MyCompany
     value: hello
     data: 1337
     datatype: dword
@@ -98,12 +98,12 @@ EXAMPLES = '''
   # NOTE: Not specifying a value will delete the root key which means
   # all values will be deleted
   win_regedit:
-    key: HKCU:\Software\MyCompany
+    key: HKCU\Software\MyCompany
     state: absent
     
   # Delete Registry Value "hello" from MyCompany Key
   win_regedit:
-    key: HKCU:\Software\MyCompany
+    key: HKCU\Software\MyCompany
     value: hello
     state: absent
 '''
